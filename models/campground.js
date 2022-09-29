@@ -20,7 +20,6 @@ const CampgroundSchema = new Schema({
 
 CampgroundSchema.post('findOneAndDelete', async function(doc) {   // post is only triggered after the action is performed (delete in this case)
   if(doc) {
-    console.log(doc);
     await Review.deleteMany({
         _id: {
           $in: doc.reviews                  // To delete all review object ID references associated with the deleted campground

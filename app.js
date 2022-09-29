@@ -1,16 +1,21 @@
 const express = require("express");
 const path = require("path");
-const Campground = require('./models/campground');
+// const Campground = require('./models/campground');
 const mongoose = require("mongoose");
 const port = 3000;
 const ejsMate = require("ejs-mate");
 const methodOverride = require("method-override");
-const catchAsync = require("./utils/catchAsync");
+// const catchAsync = require("./utils/catchAsync");
 const ExpressError = require("./utils/ExpressError");
-const Joi = require("joi");
-const {joiSchema, reviewJoiSchema} = require("./schemas.js");
-const Review = require("./models/review");
+// const Joi = require("joi");
+// const {joiSchema, reviewJoiSchema} = require("./schemas.js");
+// const Review = require("./models/review");
 
+const campRoutes = require("./routes/campRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+
+const session = require("express-session");
+const flash = require("connect-flash");
 
 mongoose.connect('mongodb://localhost:27017/yelpcamp')
 // , {
@@ -35,95 +40,41 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended : true}));           //express.urlencoded() function is a built-in middleware function in Express. It parses incoming requests with urlencoded payloads and is based on body-parser.
 app.use(methodOverride('_method'));                        // '_method is the query string name we have used in the edit.ejs form ACTION'
 
-const validateCamp = (req, res, next) => {
+app.use(express.static(path.join(__dirname , 'public')));  // assigning express to use the 'public' folder for static files/assets , __dirname refers to the currently active folder
 
-  const {error} = joiSchema.validate(req.body);
-  if(error) {
-    const msg = error.details.map(el => el.message).join(',')
-    throw new ExpressError(msg, 400);
-  }
-  else {
-    next();
+const sessionConfig = {
+  secret: 'donttellanyone',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    expires: Date.now() + (1000* 60 * 60 * 24 * 7),
+    maxAge: 1000* 60 * 60 * 24 * 7
   }
 }
 
-const validateReview = (req, res, next) => {
-  const {error} = reviewJoiSchema.validate(req.body);
-  if(error) {
+app.use(session(sessionConfig));
 
-    const msg = error.details.map(el => el.message).join(',');
-    throw new ExpressError(msg, 400);
-  }
-  else {
-    next();
-  }
-}
+app.use(flash());
+
+
+// below flash middleware set up ensures we always have access to local variables sucess & error -- so we dont have to pass them to templates everytime during render
+app.use((req, res, next) => {
+  res.locals.success = req.flash('success');
+  res.locals.error = req.flash('error');
+  next();
+})
+
+
+app.use('/campgrounds', campRoutes);
+app.use('/campgrounds/:id/reviews', reviewRoutes);
 
 app.get('/', (req,res) =>{
-  res.render(`home`);                                     // render looks into the views folder for an ejs file by default as mentioned above and so the (dot).ejs extension or the file path are NOT required
+  res.render(`home`);       // render looks into the views folder for an ejs file by default as mentioned above and so the (dot).ejs extension or the file path are NOT required
 })
 
-app.get('/campgrounds', catchAsync(async(req, res) =>{
-  const campgrounds = await Campground.find({});
-  res.render(`campgrounds/index`, {campgrounds})          // {campgrounds} passes the file over to the ejs for rendering
-}));
-
-app.get('/campgrounds/add', (req, res) => {
-  res.render('campgrounds/add')
-})
-
-app.post('/campgrounds', validateCamp, catchAsync(async(req, res, next) => {
-
-  // if(!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
-
-  const campground = new Campground(req.body.campground);    // req.body needs to be parsed by express using urlencoded as above- to get a readable text
-  await campground.save();
-  res.redirect(`/campgrounds/${campground._id}`)
-}));
 
 
 
-app.get('/campgrounds/:id', catchAsync(async(req, res) => {
-  const campground = await Campground.findById(req.params.id).populate('reviews');
-
-  res.render('campgrounds/show', {campground})
-}));
-
-app.get('/campgrounds/:id/edit', catchAsync(async(req, res) => {
-  const campground = await Campground.findById(req.params.id)
-  res.render('campgrounds/edit', {campground})
-}));
-
-app.put('/campgrounds/:id',validateCamp, catchAsync(async(req, res) => {
-  const {id} = req.params;                                    // destructuring the value of id from the request
-  const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground});   // using a spread operator (...) allows an iterable (such as array ) to be expanded in places where zero or more arguments are elements are expected
-  res.redirect(`/campgrounds/${campground._id}`)
-}));
-
-app.delete('/campground/:id', catchAsync(async(req, res) => {
-  const {id} = req.params;
-  await Campground.findByIdAndDelete(id);                    // this triggers the findOneAndDelete mongoose middleware in campground.js
-  res.redirect('/campgrounds')
-}));
-
-app.post('/campgrounds/:id/reviews', validateReview,  catchAsync(async(req, res) => {
-  const campground = await Campground.findById(req.params.id);
-  const review = new Review(req.body.review);
-  campground.reviews.push(review);
-
-  await campground.save();
-  await review.save();
-  res.redirect(`/campgrounds/${campground._id}`);
-}));
-
-app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async(req, res) => {
-  const {id, reviewId} = req.params;
-  await Campground.findByIdAndUpdate(id, {$pull: { reviews: reviewId}})           // $pull operator from mongo is used to completely remove all references to the matching Ids passed
-  await Review.findByIdAndDelete(reviewId)
-
-  res.redirect(`/campgrounds/${id}`)
-
-}))
 
 app.all('*', (req, res, next) => {
   next(new ExpressError('Page not Found', 404));

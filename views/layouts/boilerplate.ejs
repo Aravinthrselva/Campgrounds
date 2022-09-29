@@ -10,6 +10,7 @@
 <body class="d-flex flex-column vh-100">
   <%- include('../partials/navbar') %>
   <main class="container mt-5">
+    <%- include('../partials/flash') %>
     <%- body %>
   </main>
   <%- include('../partials/footer') %>
@@ -17,29 +18,8 @@
   </script>
 
   <!-- Bootstrap validation script below-->
-  <script>
-    // Example starter JavaScript for disabling form submissions if there are invalid fields
-    // below is a Self-Invoking Function (included within () and ends with a ())
-  (function() {
-  'use strict'
+  <script src= "/javascripts/validateForms.js"> </script>
 
-  // Fetch all the forms we want to apply custom Bootstrap validation styles to
-  const forms = document.querySelectorAll('.needs-validation')
-
-  // Loop over them and prevent submission
-  Array.from(forms)
-    .forEach(function (form) {
-      form.addEventListener('submit', function(event) {
-        if (!form.checkValidity()) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-
-        form.classList.add('was-validated')
-      }, false)
-  })
-  })()
-  </script>
 
 </body>
 
