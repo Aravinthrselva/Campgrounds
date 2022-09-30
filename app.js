@@ -13,9 +13,14 @@ const ExpressError = require("./utils/ExpressError");
 
 const campRoutes = require("./routes/campRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const registerRoutes = require("./routes/registerRoutes");
 
 const session = require("express-session");
 const flash = require("connect-flash");
+
+const passport = require("passport");
+const LocalPassport = require("passport-local");
+const User = require("./models/user");
 
 mongoose.connect('mongodb://localhost:27017/yelpcamp')
 // , {
@@ -53,12 +58,24 @@ const sessionConfig = {
 }
 
 app.use(session(sessionConfig));
-
 app.use(flash());
 
+app.use(passport.initialize());      // to have persistent login sessions
+app.use(passport.session());
+//autheticate static method is provided by passport-local-mongoose
+passport.use(new LocalPassport(User.authenticate()));
 
-// below flash middleware set up ensures we always have access to local variables sucess & error -- so we dont have to pass them to templates everytime during render
+// storing and removing user from the session
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
+
 app.use((req, res, next) => {
+  // console.log(req.session); explore the details stored in the session
+  res.locals.currentUser = req.user;
+  // below flash middleware set up ensures we always have access to local variables sucess & error (they become global variables) -- so we dont have to pass them to templates everytime during render
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   next();
@@ -67,6 +84,7 @@ app.use((req, res, next) => {
 
 app.use('/campgrounds', campRoutes);
 app.use('/campgrounds/:id/reviews', reviewRoutes);
+app.use('/', registerRoutes);
 
 app.get('/', (req,res) =>{
   res.render(`home`);       // render looks into the views folder for an ejs file by default as mentioned above and so the (dot).ejs extension or the file path are NOT required

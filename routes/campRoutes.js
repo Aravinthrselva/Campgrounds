@@ -6,7 +6,7 @@ const catchAsync = require("../utils/catchAsync");
 const ExpressError = require("../utils/ExpressError");
 const {joiSchema} = require("../schemas.js");
 
-
+const {isLoggedIn} = require("../utils/isAuthenticated")
 
 const validateCamp = (req, res, next) => {
 
@@ -27,7 +27,7 @@ router.get('/', catchAsync(async(req, res) =>{
   res.render(`campgrounds/index`, {campgrounds})          // 'render' passes the {campgrounds} data over to the ejs for rendering
 }));
 
-router.get('/add', (req, res) => {
+router.get('/add', isLoggedIn, (req, res) => {
   res.render('campgrounds/add')
 })
 
@@ -45,21 +45,21 @@ router.get('/:id', catchAsync(async(req, res) => {
   const campground = await Campground.findById(req.params.id).populate('reviews');
   if(!campground){
     req.flash('error', "That camp doesnt exist");
-    res.redirect('/campgrounds');
+    return res.redirect('/campgrounds');
   }
   res.render('campgrounds/show', {campground})
 }));
 
-router.get('/:id/edit', catchAsync(async(req, res) => {
+router.get('/:id/edit', isLoggedIn, catchAsync(async(req, res) => {
   const campground = await Campground.findById(req.params.id)
   if(!campground){
     req.flash('error', "That camp doesnt exist");
-    res.redirect('/campgrounds');
+    return res.redirect('/campgrounds');
   }
   res.render('campgrounds/edit', {campground})
 }));
 
-router.put('/:id',validateCamp, catchAsync(async(req, res) => {
+router.put('/:id', isLoggedIn, validateCamp, catchAsync(async(req, res) => {
   const {id} = req.params;                                    // destructuring the value of id from the request
   const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground});   // using a spread operator (...) allows an iterable (such as array ) to be expanded in places where zero or more arguments are elements are expected
 
@@ -67,7 +67,7 @@ router.put('/:id',validateCamp, catchAsync(async(req, res) => {
   res.redirect(`/campgrounds/${campground._id}`)
 }));
 
-router.delete('/:id', catchAsync(async(req, res) => {
+router.delete('/:id', isLoggedIn, catchAsync(async(req, res) => {
   const {id} = req.params;
   await Campground.findByIdAndDelete(id);                    // this triggers the findOneAndDelete mongoose middleware in campground.js
 
