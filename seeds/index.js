@@ -32,7 +32,8 @@ const seedDB = async() => {
     location : `${cities[randompick].city}, ${cities[randompick].state}`,
     image : `https://source.unsplash.com/random/300x300?camping`,
     description : "Dare to live the life you've always wanted",
-    price : `${pricePick}`
+    price : `${pricePick}`,
+    author : '6337ca8de388b3d5c6cca775'
   })
   await camp.save();
   }

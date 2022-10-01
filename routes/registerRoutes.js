@@ -37,7 +37,7 @@ router.get('/login', (req, res) => {
 //keepSessionInfo should be true after the security updates done to passport 0.6.0
 router.post('/login', passport.authenticate('local', {failureFlash: true, failureRedirect: '/login', keepSessionInfo: true}), (req, res) => {
   req.flash('success', `Welcome back ser!`)
-  const redirectUrl = req.session.returnTo || '/campgrounds';
+  const redirectUrl = req.session.returnTo || '/campgrounds';      // the first true value is assigned
   // if(req.session.returnTo) {
   //   console.log(req.session.returnTo);
   //   return res.redirect(req.session.returnTo);

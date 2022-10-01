@@ -78,6 +78,7 @@ app.use((req, res, next) => {
   // below flash middleware set up ensures we always have access to local variables sucess & error (they become global variables) -- so we dont have to pass them to templates everytime during render
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
+  
   next();
 })
 
