@@ -22,7 +22,7 @@ const CampgroundSchema = new Schema({
   ]
 });
 
-CampgroundSchema.post('findOneAndDelete', async function(doc) {   // post is only triggered after the action is performed (delete in this case)
+CampgroundSchema.post('findOneAndDelete', async function(doc) {   // .post middleware is only triggered after the action is performed (delete in this case)
   if(doc) {
     await Review.deleteMany({
         _id: {
